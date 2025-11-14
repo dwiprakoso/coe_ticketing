@@ -7,7 +7,6 @@ use App\Models\Buyer;
 use App\Models\Ticket;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use App\Services\XenditService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +24,7 @@ class OrderController extends Controller
 
         return view('order.index', compact('product', 'tickets'));
     }
+
     public function create($ticket_id)
     {
         $ticket = Ticket::findOrFail($ticket_id);
@@ -38,12 +38,12 @@ class OrderController extends Controller
         $request->validate([
             'ticket_id' => 'required|exists:tickets,id',
             'nama_lengkap' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'alamat_lengkap' => 'required|string|max:500',
             'no_handphone' => 'required|string|max:20',
             'quantity' => 'required|integer|min:1|max:5',
         ]);
 
-        // Get ticket data untuk harga
+        // Get ticket data
         $ticket = Ticket::find($request->ticket_id);
 
         // Cek stok tiket
@@ -53,15 +53,15 @@ class OrderController extends Controller
                 ->withInput();
         }
 
-        // Hitung biaya berdasarkan quantity
-        $ticket_price = $ticket->price * $request->quantity;
-        $admin_fee = $ticket_price * 0.05; // 5% dari total harga tiket
-        $total_amount = $ticket_price + $admin_fee;
+        // Set semua biaya ke 0 karena gratis
+        $ticket_price = 0;
+        $admin_fee = 0;
+        $total_amount = 0;
 
         // Generate external ID yang unik
         do {
             $randomNumber = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
-            $externalId = 'SAMPOOKONG-' . $randomNumber;
+            $externalId = 'ORDER-' . $randomNumber;
 
             // Cek apakah external_id sudah ada di database
             $exists = Buyer::where('external_id', $externalId)->exists();
@@ -71,16 +71,16 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Kurangi stok tiket langsung (untuk testing)
+            // Kurangi stok tiket
             $ticket->decrement('qty', $request->quantity);
 
             // Simpan ke database buyers
             $buyer = new Buyer();
             $buyer->nama_lengkap = $request->nama_lengkap;
-            $buyer->email = $request->email;
+            $buyer->email = '-'; // Default value karena tidak ada field email
             $buyer->no_handphone = $request->no_handphone;
             $buyer->nama_instagram = '-'; // Default value
-            $buyer->alamat_lengkap = '-'; // Default value
+            $buyer->alamat_lengkap = $request->alamat_lengkap;
             $buyer->kode_pos = '-'; // Default value
             $buyer->ukuran_jersey = '-'; // Default value
             $buyer->quantity = $request->quantity;
@@ -89,84 +89,22 @@ class OrderController extends Controller
             $buyer->admin_fee = $admin_fee;
             $buyer->total_amount = $total_amount;
             $buyer->external_id = $externalId;
+            $buyer->payment_status = 'paid'; // Langsung paid karena gratis
             $buyer->save();
 
-            // Debug: Cek konfigurasi Xendit
-            $xenditKey = config('services.xendit.secret_key');
-            if (!$xenditKey) {
-                Log::error('Xendit API Key not configured');
-                DB::rollback();
-                return redirect()->route('admin.dashboard')
-                    ->with('error', 'Konfigurasi Xendit belum diatur. Silakan periksa file .env');
-            }
-
-            // Debug: Log data yang akan dikirim
-            Log::info('Creating Xendit Invoice', [
+            Log::info('Free Ticket Registration', [
                 'buyer_id' => $buyer->id,
                 'external_id' => $externalId,
                 'ticket_id' => $ticket->id,
                 'quantity' => $request->quantity,
-                'ticket_price' => $ticket_price,
-                'admin_fee' => $admin_fee,
-                'total_amount' => $total_amount,
                 'customer_name' => $request->nama_lengkap,
-                'customer_email' => $request->email
+                'customer_address' => $request->alamat_lengkap
             ]);
 
-            $xenditService = new XenditService();
-
-            $invoiceData = [
-                'external_id' => $externalId,
-                'description' => 'Pembelian Tiket: ' . $ticket->name . ' (' . $request->quantity . 'x)',
-                'amount' => $total_amount,
-                'success_url' => route('payment.success'),
-                'failure_url' => route('payment.failed'),
-                'items' => [
-                    [
-                        'name' => $ticket->name,
-                        'quantity' => $request->quantity,
-                        'price' => $ticket->price,
-                        'category' => 'Tiket'
-                    ],
-                    [
-                        'name' => 'Biaya Admin (5%)',
-                        'quantity' => 1,
-                        'price' => $admin_fee,
-                        'category' => 'Admin Fee'
-                    ]
-                ],
-                'customer' => [
-                    'given_names' => $request->nama_lengkap,
-                    'email' => $request->email,
-                    'mobile_number' => $request->no_handphone,
-                    'addresses' => [
-                        [
-                            'city' => 'Jakarta',
-                            'country' => 'Indonesia',
-                            'postal_code' => '10000',
-                            'state' => 'DKI Jakarta',
-                            'street_line1' => 'Jakarta',
-                        ]
-                    ]
-                ]
-            ];
-
-            // Debug: Log invoice data sebelum dikirim
-            Log::info('Invoice Data to be sent to Xendit', $invoiceData);
-
-            $invoice = $xenditService->createInvoice($invoiceData);
-
-            // Debug: Log response dari Xendit
-            Log::info('Xendit Invoice Created Successfully', [
-                'invoice_id' => $invoice['id'],
-                'invoice_url' => $invoice['invoice_url']
-            ]);
-
-            // Generate QR Code setelah invoice berhasil dibuat
+            // Generate QR Code
             try {
                 $verifyUrl = route('ticket.verify', ['external_id' => $externalId]);
-                $qrCodeFileName = 'qr_' . $externalId . '.png';
-                $qrCodePath = 'qr_codes/' . $qrCodeFileName;
+                $qrCodePath = 'qr_codes/qr_' . $externalId;
 
                 // Pastikan direktori ada
                 if (!Storage::disk('public')->exists('qr_codes')) {
@@ -177,6 +115,7 @@ class OrderController extends Controller
                 $qrCode = null;
                 $backends = ['svg', 'png'];
                 $usedBackend = null;
+                $finalPath = null;
 
                 foreach ($backends as $format) {
                     try {
@@ -185,14 +124,14 @@ class OrderController extends Controller
                                 ->size(300)
                                 ->margin(2)
                                 ->generate($verifyUrl);
-                            $qrCodePath = 'qr_codes/qr_' . $externalId . '.svg';
+                            $finalPath = $qrCodePath . '.svg';
                             $usedBackend = 'svg';
                         } else {
                             $qrCode = QrCode::format('png')
                                 ->size(300)
                                 ->margin(2)
                                 ->generate($verifyUrl);
-                            $qrCodePath = 'qr_codes/qr_' . $externalId . '.png';
+                            $finalPath = $qrCodePath . '.png';
                             $usedBackend = 'png';
                         }
 
@@ -213,20 +152,20 @@ class OrderController extends Controller
                 }
 
                 // Store QR code image
-                Storage::disk('public')->put($qrCodePath, $qrCode);
+                Storage::disk('public')->put($finalPath, $qrCode);
 
                 // Generate full URL untuk QR code
-                $qrCodeFullUrl = Storage::disk('public')->url($qrCodePath);
+                $qrCodeFullUrl = Storage::disk('public')->url($finalPath);
 
                 // Log QR code generation
                 Log::info('QR Code Generated Successfully', [
                     'buyer_id' => $buyer->id,
                     'external_id' => $externalId,
                     'qr_code_path' => $qrCodeFullUrl,
-                    'qr_code_file_path' => $qrCodePath,
+                    'qr_code_file_path' => $finalPath,
                     'verify_url' => $verifyUrl,
                     'backend_used' => $usedBackend,
-                    'file_size' => Storage::disk('public')->size($qrCodePath)
+                    'file_size' => Storage::disk('public')->size($finalPath)
                 ]);
 
                 $qrCodePathToStore = $qrCodeFullUrl;
@@ -247,38 +186,36 @@ class OrderController extends Controller
                 $qrCodePathToStore = null;
             }
 
-            // Update buyer dengan data invoice dan QR code full URL
+            // Update buyer dengan QR code path
             $buyer->update([
-                'xendit_invoice_id' => $invoice['id'],
-                'xendit_invoice_url' => $invoice['invoice_url'],
-                'payment_status' => 'pending',
                 'qr_code_path' => $qrCodePathToStore
             ]);
 
             // Commit transaction
             DB::commit();
 
-            // Redirect ke halaman invoice atau dashboard dengan link pembayaran
-            return redirect($invoice['invoice_url']);
+            // Redirect ke halaman sukses dengan pesan tiket gratis berhasil
+            return redirect()->route('payment.success')
+                ->with('success', 'Pendaftaran tiket gratis berhasil!');
         } catch (Exception $e) {
             // Rollback transaction jika ada error
             DB::rollback();
 
             // Enhanced error logging
-            Log::error('Xendit Invoice Creation Failed', [
+            Log::error('Free Ticket Registration Failed', [
                 'error_message' => $e->getMessage(),
                 'buyer_id' => $buyer->id ?? 'not_created',
                 'external_id' => $externalId ?? 'not_generated',
                 'ticket_id' => $ticket->id,
                 'quantity' => $request->quantity,
-                'customer_email' => $request->email ?? 'not_provided',
+                'customer_address' => $request->alamat_lengkap ?? 'not_provided',
                 'stack_trace' => $e->getTraceAsString()
             ]);
 
-            // Return dengan error message yang lebih detail
+            // Return dengan error message
             return redirect()->route('order.create', ['ticket_id' => $ticket->id])
-                ->with('error', 'Gagal membuat invoice pembayaran: ' . $e->getMessage())
-                ->with('debug_info', 'Silakan cek log untuk detail error');
+                ->with('error', 'Gagal melakukan pendaftaran tiket: ' . $e->getMessage())
+                ->withInput();
         }
     }
 }

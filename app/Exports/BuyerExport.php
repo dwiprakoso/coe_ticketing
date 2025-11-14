@@ -34,12 +34,11 @@ class BuyerExport implements FromCollection, WithHeadings, WithMapping, WithColu
             'ID Pesanan',
             'Nama',
             'No HP',
-            'Email',
+            'Komunitas',
             'Kategori Tiket',
             'Jumlah',
             'Waktu Pemesanan',
             'Status Pembayaran',
-            'Link Pembayaran',
             'Harga Tiket',
             'Biaya Layanan',
             'Total Harga',
@@ -55,19 +54,16 @@ class BuyerExport implements FromCollection, WithHeadings, WithMapping, WithColu
             $buyer->external_id,
             $buyer->nama_lengkap,
             $buyer->no_handphone,
-            $buyer->email,
+            $buyer->alamat_lengkap,
             $buyer->ticket->name,
             $buyer->quantity,
             $buyer->created_at->translatedFormat('l, d F Y'),
             $buyer->payment_status,
-            $buyer->xendit_invoice_url,
             $buyer->ticket_price,
             $buyer->admin_fee,
             $buyer->total_amount,
         ];
     }
-
-
 
     public function columnWidths(): array
     {
@@ -76,15 +72,14 @@ class BuyerExport implements FromCollection, WithHeadings, WithMapping, WithColu
             'B' => 20,  // ID Pesanan
             'C' => 25,  // Nama
             'D' => 15,  // No HP
-            'E' => 25,  // Email
+            'E' => 35,  // Alamat Lengkap
             'F' => 20,  // Kategori Tiket
             'G' => 8,   // Jumlah
             'H' => 20,  // Waktu Pemesanan
             'I' => 15,  // Status Pembayaran
-            'J' => 30,  // Link Pembayaran
-            'K' => 12,  // Harga Tiket
-            'L' => 12,  // Biaya Layanan
-            'M' => 12,  // Total Harga
+            'J' => 12,  // Harga Tiket
+            'K' => 12,  // Biaya Layanan
+            'L' => 12,  // Total Harga
         ];
     }
 
@@ -100,13 +95,13 @@ class BuyerExport implements FromCollection, WithHeadings, WithMapping, WithColu
         }
 
         // Style untuk header (opsional)
-        $sheet->getStyle('A1:M1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:M1')->getFill()
+        $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:L1')->getFill()
             ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setARGB('CCCCCC');
 
         // Center align untuk semua cells
-        $sheet->getStyle('A1:M' . $totalRows)->getAlignment()
+        $sheet->getStyle('A1:L' . $totalRows)->getAlignment()
             ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
             ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 

@@ -93,7 +93,7 @@
                 <!--end:Menu item-->
 
                 <!--begin:Menu item - Check-In-->
-                <div class="menu-item">
+                {{-- <div class="menu-item">
                     <a class="menu-link {{ Request::routeIs('admin.checkin.*') ? 'active' : '' }}"
                         href="{{ route('admin.checkin.index') }}">
                         <span class="menu-icon">
@@ -101,11 +101,11 @@
                         </span>
                         <span class="menu-title">Check-In</span>
                     </a>
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
 
                 <!--begin:Menu item - OTS (On The Spot Sales)-->
-                <div class="menu-item">
+                {{-- <div class="menu-item">
                     <a class="menu-link {{ Request::routeIs('admin.ots-sales.*') ? 'active' : '' }}"
                         href="{{ route('admin.ots-sales.index') }}">
                         <span class="menu-icon">
@@ -113,7 +113,7 @@
                         </span>
                         <span class="menu-title">OTS</span>
                     </a>
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
 
             </div>
@@ -182,8 +182,7 @@
                         data-kt-menu="true" data-kt-element="theme-mode-menu">
                         <!--begin::Menu item-->
                         <div class="menu-item px-3 my-0">
-                            <a href="#" class="menu-link px-3 py-2" data-kt-element="mode"
-                                data-kt-value="light">
+                            <a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="light">
                                 <span class="menu-icon" data-kt-element="icon">
                                     <i class="ki-outline ki-night-day fs-2"></i>
                                 </span>

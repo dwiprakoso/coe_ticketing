@@ -521,15 +521,6 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email <span
-                                        class="text-danger">*</span></label>
-                                <input type="email" class="form-control" id="email" name="email" required
-                                    value="{{ old('email') }}" placeholder="contoh@mail.com" />
-                                @error('email')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
 
                             <div class="mb-3">
                                 <label for="no_handphone" class="form-label">No. Handphone <span
@@ -539,6 +530,16 @@
                                     pattern="^08\d{8,12}$"
                                     title="Masukkan nomor handphone yang valid, mulai dengan 08 dan 10-14 digit" />
                                 @error('no_handphone')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="alamat_lengkap" class="form-label">Komunitas <span
+                                        class="text-danger">*</span></label>
+                                <input type="alamat_lengkap" class="form-control" id="alamat_lengkap"
+                                    name="alamat_lengkap" required value="{{ old('alamat_lengkap') }}"
+                                    placeholder="Komunitas" />
+                                @error('alamat_lengkap')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -552,6 +553,7 @@
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
+
 
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-credit-card"></i> Lanjut ke Pembayaran

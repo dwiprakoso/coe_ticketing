@@ -227,7 +227,7 @@
                                     <th class="min-w-50px">No</th>
                                     <th class="min-w-125px">ID Pesanan</th>
                                     <th class="min-w-150px">Informasi Pembeli</th>
-                                    <th class="min-w-100px">Kontak</th>
+                                    <th class="min-w-100px">Komunitas</th>
                                     <th class="min-w-100px">Kategori Tiket</th>
                                     <th class="min-w-70px">Qty</th>
                                     <th class="min-w-100px">Status</th>
@@ -254,13 +254,13 @@
                                                     <a href="#"
                                                         class="text-gray-800 text-hover-primary mb-1 fw-bold">{{ $buyer->nama_lengkap }}</a>
                                                     <span
-                                                        class="text-muted fw-semibold text-muted d-block fs-7">{{ $buyer->email }}</span>
+                                                        class="text-muted fw-semibold text-muted d-block fs-7">{{ $buyer->no_handphone }}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="fw-bold text-gray-800">{{ $buyer->no_handphone }}</span>
+                                                <span class="fw-bold text-gray-800">{{ $buyer->alamat_lengkap }}</span>
                                             </div>
                                         </td>
                                         <td>
