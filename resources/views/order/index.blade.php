@@ -16,26 +16,17 @@
     <style>
         :root {
             --primary: #D4A574;
-            /* Gold color */
             --primary-dark: #B8935F;
-            /* Darker gold for hover */
-            --success: #D4A574;
-            /* Gold for price */
+            --success: #28a745;
+            --danger: #dc3545;
             --dark: #2C2C2C;
-            /* Dark gray */
             --white: #ffffff;
             --gray-100: #F5F5F5;
-            /* Light gray background */
             --gray-200: #E8E8E8;
-            /* Light border */
             --gray-300: #D1D1D1;
-            /* Medium border */
             --gray-600: #666666;
-            /* Medium gray text */
             --gray-700: #4A4A4A;
-            /* Darker gray text */
             --gray-900: #2C2C2C;
-            /* Very dark gray */
         }
 
         * {
@@ -170,6 +161,18 @@
             transform: translateY(-2px);
         }
 
+        .ticket-item.sold-out {
+            opacity: 0.6;
+            background: var(--gray-100);
+            border-color: var(--gray-300);
+        }
+
+        .ticket-item.sold-out:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: var(--gray-300);
+        }
+
         .ticket-name {
             font-size: 1.125rem;
             font-weight: 600;
@@ -195,6 +198,15 @@
             color: var(--primary);
         }
 
+        .ticket-qty.low-stock {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .ticket-qty.low-stock i {
+            color: var(--danger);
+        }
+
         .ticket-price {
             font-size: 1.5rem;
             font-weight: 700;
@@ -202,10 +214,23 @@
             margin-bottom: 0.25rem;
         }
 
+        .ticket-price.free {
+            color: var(--success);
+        }
+
         .price-label {
             color: var(--gray-600);
             font-size: 12px;
             margin-bottom: 1rem;
+        }
+
+        .badge-sold-out {
+            background: var(--danger);
+            color: var(--white);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
         }
 
         /* Button */
@@ -228,6 +253,14 @@
             transform: translateY(-2px);
             color: var(--white);
             box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: var(--gray-300);
+            color: var(--gray-600);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
         }
 
         .btn-primary i {
@@ -305,12 +338,6 @@
                             <i class="fas fa-map-marker-alt"></i>
                             <span>{{ $product->location }}</span>
                         </div>
-
-                        {{-- <div class="event-description">
-                            <h5 style="font-weight: 600; color: var(--dark); margin-bottom: 0.75rem;">Deskripsi Event
-                            </h5>
-                            <p>{{ $product->product_description }}</p>
-                        </div> --}}
                     </div>
                 </div>
             </div>
@@ -320,32 +347,55 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="section-title">
-                    {{-- <i class="fas fa-ticket-alt"></i> --}}
                     Kategori Tiket
                 </h3>
 
                 <div class="row">
                     @foreach ($tickets as $ticket)
                         <div class="col-md-6">
-                            <div class="ticket-item">
+                            <div class="ticket-item {{ $ticket->qty <= 0 ? 'sold-out' : '' }}">
                                 <div class="d-flex justify-content-between">
                                     <div class="flex-grow-1">
                                         <h5 class="ticket-name">{{ $ticket->name }}</h5>
                                         <p class="ticket-description">Tiket reguler untuk akses umum</p>
-                                        {{-- <div class="ticket-qty">
-                                            <i class="fas fa-users"></i>
-                                            {{ $ticket->qty }} tiket tersisa
-                                        </div> --}}
+
+                                        @if ($ticket->qty > 0)
+                                            <div class="ticket-qty {{ $ticket->qty <= 10 ? 'low-stock' : '' }}">
+                                                <i class="fas fa-users"></i>
+                                                {{ $ticket->qty }} tiket tersisa
+                                                @if ($ticket->qty <= 10)
+                                                    <span class="ms-1">(Segera Habis!)</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="ticket-qty" style="color: var(--danger); font-weight: 600;">
+                                                <i class="fas fa-times-circle"></i>
+                                                Tiket Habis
+                                            </div>
+                                        @endif
                                     </div>
                                     <div class="text-end">
-                                        <div class="ticket-price">Rp {{ number_format($ticket->price, 0, ',', '.') }}
-                                        </div>
-                                        <div class="price-label">per tiket</div>
-                                        <a href="{{ route('order.create', ['ticket_id' => $ticket->id]) }}"
-                                            class="btn btn-primary">
-                                            <i class="fas fa-shopping-cart"></i>
-                                            Pesan Sekarang
-                                        </a>
+                                        @if ($ticket->qty <= 0)
+                                            <span class="badge-sold-out">
+                                                <i class="fas fa-ban me-1"></i>
+                                                SOLD OUT
+                                            </span>
+                                        @else
+                                            @if ($ticket->price == 0)
+                                                <div class="ticket-price free">GRATIS</div>
+                                                <div class="price-label">tiket gratis</div>
+                                            @else
+                                                <div class="ticket-price">Rp
+                                                    {{ number_format($ticket->price, 0, ',', '.') }}</div>
+                                                <div class="price-label">per tiket</div>
+                                            @endif
+
+                                            <a href="{{ route('order.create', ['ticket_id' => $ticket->id]) }}"
+                                                class="btn btn-primary">
+                                                <i class="fas fa-shopping-cart"></i>
+                                                Pesan Sekarang
+                                            </a>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -365,14 +415,14 @@
                     <p>Platform terpercaya untuk booking tiket event di Indonesia</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p>&copy; 2025 Tciketify. All rights reserved.</p>
+                    <p>&copy; 2025 Ticketify. All rights reserved.</p>
                 </div>
             </div>
         </div>
-        </div>
+    </footer>
 
-        <!-- Bootstrap JS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
