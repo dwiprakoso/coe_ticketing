@@ -359,7 +359,7 @@
                                         <h5 class="ticket-name">{{ $ticket->name }}</h5>
                                         {{-- <p class="ticket-description">Tiket reguler untuk akses umum</p> --}}
 
-                                        @if ($ticket->qty > 0)
+                                        {{-- @if ($ticket->qty > 0)
                                             <div class="ticket-qty {{ $ticket->qty <= 10 ? 'low-stock' : '' }}">
                                                 <i class="fas fa-users"></i>
                                                 {{ $ticket->qty }} tiket tersisa
@@ -372,7 +372,7 @@
                                                 <i class="fas fa-times-circle"></i>
                                                 Tiket Habis
                                             </div>
-                                        @endif
+                                        @endif --}}
                                     </div>
                                     <div class="text-end">
                                         @if ($ticket->qty <= 0)
@@ -383,7 +383,7 @@
                                         @else
                                             @if ($ticket->price == 0)
                                                 <div class="ticket-price free">GRATIS</div>
-                                                <div class="price-label">tiket gratis</div>
+                                                {{-- <div class="price-label">tiket gratis</div> --}}
                                             @else
                                                 <div class="ticket-price">Rp
                                                     {{ number_format($ticket->price, 0, ',', '.') }}</div>
