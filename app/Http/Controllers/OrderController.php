@@ -6,6 +6,7 @@ use Exception;
 use App\Models\Buyer;
 use App\Models\Ticket;
 use App\Models\Product;
+use App\Services\WahaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,13 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class OrderController extends Controller
 {
+    protected $wahaService;
+
+    public function __construct(WahaService $wahaService)
+    {
+        $this->wahaService = $wahaService;
+    }
+
     public function index()
     {
         // Ambil 1 produk terbaru (event)
@@ -191,6 +199,9 @@ class OrderController extends Controller
                 'qr_code_path' => $qrCodePathToStore
             ]);
 
+            // KIRIM WHATSAPP MESSAGE
+            $this->sendWhatsAppMessage($request->no_handphone, $buyer, $ticket);
+
             // Commit transaction
             DB::commit();
 
@@ -217,5 +228,87 @@ class OrderController extends Controller
                 ->with('error', 'Gagal melakukan pendaftaran tiket: ' . $e->getMessage())
                 ->withInput();
         }
+    }
+
+    /**
+     * Kirim WhatsApp message menggunakan WahaService
+     */
+    private function sendWhatsAppMessage(string $phone, Buyer $buyer, Ticket $ticket)
+    {
+        try {
+            // Format nomor telepon
+            $phone = $this->formatPhoneNumber($phone);
+
+            // Buat message
+            $message = $this->buildTicketMessage($buyer, $ticket);
+
+            // Kirim message
+            $result = $this->wahaService->sendText($phone, $message);
+
+            // Log hasil pengiriman
+            if ($result['success']) {
+                Log::info('WhatsApp ticket confirmation sent', [
+                    'buyer_id' => $buyer->id,
+                    'external_id' => $buyer->external_id,
+                    'phone' => $phone,
+                    'ticket_name' => $ticket->name
+                ]);
+            } else {
+                Log::warning('WhatsApp send failed', [
+                    'buyer_id' => $buyer->id,
+                    'external_id' => $buyer->external_id,
+                    'phone' => $phone,
+                    'error' => $result['message']
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Log error tapi jangan stop proses pendaftaran
+            Log::error('WhatsApp send error', [
+                'buyer_id' => $buyer->id,
+                'external_id' => $buyer->external_id,
+                'phone' => $phone,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Build pesan tiket untuk WhatsApp
+     */
+    private function buildTicketMessage(Buyer $buyer, Ticket $ticket): string
+    {
+        $verifyUrl = route('ticket.verify', ['external_id' => $buyer->external_id]);
+
+        $message = "✅ *Konfirmasi Pemesanan Tiket!*\n\n";
+        $message .= "Nama: {$buyer->nama_lengkap}\n";
+        $message .= "Tiket: {$ticket->name}\n";
+        $message .= "Jumlah: {$buyer->quantity}\n";
+        $message .= "Kode: *{$buyer->external_id}*\n\n";
+        // $message .= "Verifikasi: {$verifyUrl}\n\n";
+        $message .= "Terima kasih! 🎊";
+
+        return $message;
+    }
+
+    /**
+     * Format nomor telepon ke format internasional
+     */
+    private function formatPhoneNumber(string $phone): string
+    {
+        // Hapus karakter non-digit
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        // Jika dimulai dengan 0, ganti dengan 62
+        if (substr($phone, 0, 1) === '0') {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        // Jika belum ada 62 di awal, tambahkan
+        if (substr($phone, 0, 2) !== '62') {
+            $phone = '62' . $phone;
+        }
+
+        return $phone;
     }
 }
