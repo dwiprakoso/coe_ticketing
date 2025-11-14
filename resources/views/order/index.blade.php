@@ -357,7 +357,7 @@
                                 <div class="d-flex justify-content-between">
                                     <div class="flex-grow-1">
                                         <h5 class="ticket-name">{{ $ticket->name }}</h5>
-                                        <p class="ticket-description">Tiket reguler untuk akses umum</p>
+                                        {{-- <p class="ticket-description">Tiket reguler untuk akses umum</p> --}}
 
                                         @if ($ticket->qty > 0)
                                             <div class="ticket-qty {{ $ticket->qty <= 10 ? 'low-stock' : '' }}">
