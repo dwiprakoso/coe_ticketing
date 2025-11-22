@@ -534,11 +534,11 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
-                                <label for="alamat_lengkap" class="form-label">Alamat<span
+                                <label for="alamat_lengkap" class="form-label">Asal<span
                                         class="text-danger">*</span></label>
                                 <input type="alamat_lengkap" class="form-control" id="alamat_lengkap"
                                     name="alamat_lengkap" required value="{{ old('alamat_lengkap') }}"
-                                    placeholder="Alamat" />
+                                    placeholder="Asal" />
                                 @error('alamat_lengkap')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
