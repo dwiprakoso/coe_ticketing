@@ -286,6 +286,13 @@ class OrderController extends Controller
         $message .= "Jumlah: {$buyer->quantity}\n";
         $message .= "Kode: *{$buyer->external_id}*\n\n";
         // $message .= "Verifikasi: {$verifyUrl}\n\n";
+
+        $message .= "*Detail Event:*\n";
+        $message .= "Nama: Launching Jawa Tengah Calendar of Events 2026\n";
+        $message .= "Lokasi: Gedung Ki Narto Sabdo Baru Taman Budaya Raden Saleh Kota Semarang\n";
+        $message .= "Waktu: Jumat, 28 November 2025\n";
+        $message .= "Jam: 18.00-Selesai\n\n";
+
         $message .= "Terima kasih! 🎊";
 
         return $message;
